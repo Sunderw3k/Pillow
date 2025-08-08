@@ -15,9 +15,10 @@ class Config(private val configDir: Path) {
     var revisionData = ""
     var serverUrl = ""
 
+    // Use ReentrantReadWriteLock approach for consistency
     // Store only metadata and file paths, not the actual JAR bytes
-    private val scriptMetadata = ConcurrentHashMap<Int, ScriptWrapper>()
-    private val scriptPaths = ConcurrentHashMap<Int, ScriptPaths>()
+    private val scriptMetadata = HashMap<Int, ScriptWrapper>()
+    private val scriptPaths = HashMap<Int, ScriptPaths>()
 
     // Simple cache for recently accessed script bytes and options
     private val scriptBytesCache = object : LinkedHashMap<Int, ByteArray>(16, 0.75f, true) {
@@ -26,7 +27,7 @@ class Config(private val configDir: Path) {
         }
     }
 
-    private val scriptOptionsCache = ConcurrentHashMap<Int, List<String>>()
+    private val scriptOptionsCache = HashMap<Int, List<String>>()
     private val lock = ReentrantReadWriteLock()
 
     companion object {
@@ -44,10 +45,10 @@ class Config(private val configDir: Path) {
                 }
 
                 val gson = Gson()
-                val config = try {
+                val config = runCatching {
                     gson.fromJson(configFile.reader(), ConfigFile::class.java)
                         ?: throw IllegalStateException("Config file is empty or invalid")
-                } catch (e: JsonSyntaxException) {
+                }.getOrElse { e ->
                     throw IllegalStateException("Invalid JSON in config file: ${e.message}", e)
                 }
 
@@ -83,10 +84,10 @@ class Config(private val configDir: Path) {
                             return@forEachIndexed
                         }
 
-                        val scriptConfig = try {
+                        val scriptConfig = runCatching {
                             Gson().fromJson(file.reader(), ScriptConfig::class.java)
                                 ?: throw IllegalStateException("Script config file is empty: ${file.name}")
-                        } catch (e: JsonSyntaxException) {
+                        }.getOrElse { e ->
                             throw IllegalStateException("Invalid JSON in script config file ${file.name}: ${e.message}", e)
                         }
 
@@ -133,9 +134,9 @@ class Config(private val configDir: Path) {
                 }
 
                 this.serverUrl = config.serverUrl
-                this.revisionData = try {
+                this.revisionData = runCatching {
                     revisionFile.readText()
-                } catch (e: IOException) {
+                }.getOrElse { e ->
                     throw IllegalStateException("Failed to read revision file: ${e.message}", e)
                 }
 
@@ -168,22 +169,26 @@ class Config(private val configDir: Path) {
 
     // Load script bytes on-demand with caching
     fun getScriptBytes(id: Int): ByteArray {
+        // Check cache first with separate synchronization
         synchronized(scriptBytesCache) {
             scriptBytesCache[id]?.let { cached ->
                 return cached
             }
         }
 
+        // Get script path under read lock
         val scriptPath = lock.read {
             scriptPaths[id] ?: throw IllegalArgumentException("Couldn't find script path for id $id")
         }
 
-        val bytes = try {
+        // Read file outside of locks to avoid blocking
+        val bytes = runCatching {
             File(scriptPath.jarPath).readBytes()
-        } catch (e: IOException) {
+        }.getOrElse { e ->
             throw IllegalStateException("Failed to read script JAR file: ${scriptPath.jarPath}", e)
         }
 
+        // Update cache
         synchronized(scriptBytesCache) {
             scriptBytesCache[id] = bytes
         }
@@ -193,27 +198,35 @@ class Config(private val configDir: Path) {
 
     // Load script options on-demand with caching
     fun getScriptOptions(id: Int): List<String> {
-        return scriptOptionsCache[id] ?: run {
-            val scriptPath = lock.read {
-                scriptPaths[id] ?: throw IllegalArgumentException("Couldn't find script path for id $id")
+        // Check cache first with separate synchronization
+        synchronized(scriptOptionsCache) {
+            scriptOptionsCache[id]?.let { cached ->
+                return cached
             }
-
-            val options = try {
-                File(scriptPath.optionPath).readLines()
-            } catch (e: IOException) {
-                println("WARNING: Failed to read options file for script $id: ${e.message}")
-                emptyList<String>() // Return empty list instead of crashing
-            }
-
-            scriptOptionsCache[id] = options
-            options
         }
+
+        // Get script path under read lock
+        val scriptPath = lock.read {
+            scriptPaths[id] ?: throw IllegalArgumentException("Couldn't find script path for id $id")
+        }
+
+        // Read file outside of locks to avoid blocking
+        val options = runCatching {
+            File(scriptPath.optionPath).readLines()
+        }.onFailure { e ->
+            println("WARNING: Failed to read options file for script $id: ${e.message}")
+        }.getOrElse { emptyList() }
+
+        // Update cache
+        synchronized(scriptOptionsCache) {
+            scriptOptionsCache[id] = options
+        }
+
+        return options
     }
 
     private fun clearCaches() {
-        synchronized(scriptBytesCache) {
-            scriptBytesCache.clear()
-        }
+        scriptBytesCache.clear()
         scriptOptionsCache.clear()
         scriptMetadata.clear()
         scriptPaths.clear()
