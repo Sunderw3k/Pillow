@@ -1,3 +1,4 @@
+
 package rip.sunrise.server.netty
 
 import io.netty.channel.ChannelInitializer
@@ -14,6 +15,10 @@ import rip.sunrise.server.config.Config
 import rip.sunrise.server.http.JarHttpServer
 
 class ServerInitializer(private val config: Config, private val http: JarHttpServer) : ChannelInitializer<SocketChannel>() {
+
+    // Create a single shared handler instance
+    private val serverHandler = ServerHandler(config, http)
+
     override fun initChannel(ch: SocketChannel) {
         val pipeline = ch.pipeline()
 
@@ -28,6 +33,9 @@ class ServerInitializer(private val config: Config, private val http: JarHttpSer
 
         pipeline.addLast(ReadTimeoutHandler(600))
 
-        pipeline.addLast(ServerHandler(config, http))
+        // Use the shared handler instance (now properly marked as @Sharable)
+        pipeline.addLast(serverHandler)
     }
+
+    fun getServerHandler(): ServerHandler = serverHandler
 }
