@@ -1,4 +1,3 @@
-
 package rip.sunrise.server
 
 import io.netty.bootstrap.ServerBootstrap

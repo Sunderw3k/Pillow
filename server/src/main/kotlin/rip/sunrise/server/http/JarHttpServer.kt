@@ -1,4 +1,3 @@
-
 package rip.sunrise.server.http
 
 import com.sun.net.httpserver.HttpServer

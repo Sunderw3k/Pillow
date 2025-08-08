@@ -1,4 +1,3 @@
-
 package rip.sunrise.server.netty
 
 import io.netty.channel.ChannelInitializer
