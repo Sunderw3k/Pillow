@@ -2,6 +2,7 @@ package rip.sunrise.agent
 
 import org.objectweb.asm.Opcodes
 import rip.sunrise.injectapi.InjectApi
+import rip.sunrise.injectapi.backends.InstrumentationBackend
 import rip.sunrise.injectapi.global.Context
 import rip.sunrise.injectapi.hooks.CapturedArgument
 import rip.sunrise.injectapi.hooks.TargetMethod
