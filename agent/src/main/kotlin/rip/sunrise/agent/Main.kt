@@ -29,10 +29,6 @@ val SSL_CERT_FINGERPRINT = "a7ef2a6effc7df71abe00d522a3122fe150b9bdf95d604273733
 const val DREAMBOT_DOMAIN = "cdn.dreambot.org"
 const val DREAMBOT_PORT = 43831
 
-const val ANTISPOOF_PRODUCT_CONSTANT = 6925123
-const val ANTISPOOF_PREMIUM_CONSTANT = 5136948
-const val ANTISPOOF_SDN_CONSTANT = 2562934
-
 fun premain(args: String?, inst: Instrumentation) {
     HookManager.addHook(InjectHook(
         HeadInjection(),
@@ -129,54 +125,7 @@ fun premain(args: String?, inst: Instrumentation) {
         }
     )
 
-    hookScriptManager()
-
     InjectApi.transform(InstrumentationBackend(inst))
-}
-
-fun hookScriptManager() {
-    val clazz = Class.forName("org.dreambot.api.script.ScriptManager")
-    HookManager.addHook(
-        InjectHook(
-            HeadInjection(),
-            clazz,
-            TargetMethod("hasPurchasedScript", "(I)Z"),
-            listOf(CapturedArgument(Opcodes.ILOAD, 1))
-        ) { ctx: Context, productId: Int ->
-            log("Checking whether we purchased product $productId")
-            if (productId != ANTISPOOF_PRODUCT_CONSTANT && productId > 0) {
-                ctx.setReturnValue(true)
-            }
-        }
-    )
-
-    HookManager.addHook(
-        InjectHook(
-            HeadInjection(),
-            clazz,
-            TargetMethod("hasPremiumScript", "(I)Z"),
-            listOf(CapturedArgument(Opcodes.ILOAD, 1))
-        ) { ctx: Context, productId: Int ->
-            log("Checking whether we have premium script $productId")
-            if (productId != ANTISPOOF_PREMIUM_CONSTANT && productId > 0) {
-                ctx.setReturnValue(true)
-            }
-        }
-    )
-
-    HookManager.addHook(
-        InjectHook(
-            HeadInjection(),
-            clazz,
-            TargetMethod("hasSDNScript", "(I)Z"),
-            listOf(CapturedArgument(Opcodes.ILOAD, 1))
-        ) { ctx: Context, productId: Int ->
-            log("Checking whether we have SDN script $productId")
-            if (productId != ANTISPOOF_SDN_CONSTANT && productId > 0) {
-                ctx.setReturnValue(true)
-            }
-        }
-    )
 }
 
 val DEBUG = System.getProperty("pillow.debug")?.isNotEmpty() == true

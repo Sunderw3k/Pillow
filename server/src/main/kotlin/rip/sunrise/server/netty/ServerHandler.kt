@@ -96,6 +96,8 @@ class ServerHandler(private val config: Config, private val http: JarHttpServer)
 
             is AuthenticationCodeRequest -> ctx.writeAndFlush(AuthenticationCodeResp(AUTHENTICATION_CODE))
 
+            is PurchasedScriptIdsRequest -> ctx.writeAndFlush(PurchasedScriptIdsResp(config.purchasedScriptIds))
+
             is a5 -> ctx.writeAndFlush(am(0))
 
             is aY -> ctx.writeAndFlush(bs(USER_ID))

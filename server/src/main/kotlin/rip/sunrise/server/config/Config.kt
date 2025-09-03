@@ -11,6 +11,7 @@ class Config(private val configDir: Path) {
     val gson = Gson()
 
     var revisionData = ""
+    var purchasedScriptIds = emptySet<Int>()
     var scripts = mutableListOf<Script>()
     var serverUrl = ""
 
@@ -26,6 +27,11 @@ class Config(private val configDir: Path) {
             val revisionFile = File(config.revisionFile)
             if (!revisionFile.isFile) {
                 error("Revision file ${revisionFile.absolutePath} isn't a normal file!")
+            }
+
+            val purchasedScriptsFile = File(config.purchasedScriptsFile)
+            if (!purchasedScriptsFile.isFile) {
+                error("Purchased Scripts file ${purchasedScriptsFile.absolutePath} isn't a normal file!")
             }
 
             val scriptConfigDirectory = File(config.scriptConfigDir)
@@ -77,6 +83,9 @@ class Config(private val configDir: Path) {
                 }
             }
 
+            this.purchasedScriptIds = runCatching {
+                purchasedScriptsFile.readLines().map { it.split(" ").first().toInt() }
+            }.getOrElse { error("Malformed purchased scripts file: ${it.localizedMessage}") }.toSet()
             this.serverUrl = config.serverUrl
             this.revisionData = revisionFile.readText()
         }.onFailure {
@@ -88,7 +97,13 @@ class Config(private val configDir: Path) {
         return scripts.firstOrNull { it.metadata.x == id } ?: error("Couldn't find script with id $id")
     }
 
-    private data class Config(val revisionFile: String, val scriptConfigDir: String, val serverUrl: String)
+    private data class Config(
+        val revisionFile: String,
+        val purchasedScriptsFile: String,
+        val scriptConfigDir: String,
+        val serverUrl: String
+    )
+
     class Script(val metadata: ScriptWrapper, val scriptJar: File, val options: List<String>)
 
     companion object {
