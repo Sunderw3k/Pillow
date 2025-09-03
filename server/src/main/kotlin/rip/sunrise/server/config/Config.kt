@@ -14,6 +14,7 @@ class Config(private val configDir: Path) {
     var purchasedScriptIds = emptySet<Int>()
     var scripts = mutableListOf<Script>()
     var serverUrl = ""
+    var userId = -1
 
     fun load() {
         runCatching {
@@ -88,6 +89,7 @@ class Config(private val configDir: Path) {
             }.getOrElse { error("Malformed purchased scripts file: ${it.localizedMessage}") }.toSet()
             this.serverUrl = config.serverUrl
             this.revisionData = revisionFile.readText()
+            this.userId = config.userId
         }.onFailure {
             logger.error("Failed to load config", it)
         }
@@ -101,7 +103,8 @@ class Config(private val configDir: Path) {
         val revisionFile: String,
         val purchasedScriptsFile: String,
         val scriptConfigDir: String,
-        val serverUrl: String
+        val serverUrl: String,
+        val userId: Int,
     )
 
     class Script(val metadata: ScriptWrapper, val scriptJar: File, val options: List<String>)

@@ -26,7 +26,6 @@ const val ACCOUNT_SESSION_ID = "cMU/vYTQnRyD2cFx1i1J6aa+ZpRIINh5qkMxoTh8XoA"
 const val SCRIPT_SESSION_ID = "dbsVbKA4mRLE4NaOMXCCnvPYEJsNsXdwek6hosbCiQ0"
 const val SESSION_TOKEN = "DHGbNt9CZ2v6yNSPvsEq/zv/toLQmA7ET4Kdvq2xeZVol8UMMSyHk0QCyfyRHPf7hhvGvO/CA7M="
 const val AUTHENTICATION_CODE = "cZVrdjeOPvd1Ozh1sfzb0z7imnearVJs1CE+Wm12mBV+ekWVOeNVFOz42ZXqYMhmDYa48mebi4DRMOqH8mc="
-const val USER_ID = 1
 
 val SCRIPT_AES_KEY = ByteArray(32) { 0 }
 val SCRIPT_IV = ByteArray(16) { 0 }
@@ -58,7 +57,7 @@ class ServerHandler(private val config: Config, private val http: JarHttpServer)
                                     request.username,
                                     ACCOUNT_SESSION_ID,
                                     SESSION_TOKEN,
-                                    USER_ID,
+                                    config.userId,
                                     hashSetOf(10)
                                 )
                             )
@@ -67,7 +66,7 @@ class ServerHandler(private val config: Config, private val http: JarHttpServer)
                         REVISION_INFO_REQUEST_PACKET_ID -> {
                             val request = unpacker.unpackRevisionInfoRequest()
 
-                            val responseChecksum = request.javaagentFlags.hashCode() xor (USER_ID * REVISION_INFO_JAVAAGENT_CONSTANT)
+                            val responseChecksum = request.javaagentFlags.hashCode() xor (config.userId * REVISION_INFO_JAVAAGENT_CONSTANT)
                             ctx.sendPacket(RevisionInfoResponse(config.revisionData, responseChecksum))
                         }
                     }
@@ -100,7 +99,7 @@ class ServerHandler(private val config: Config, private val http: JarHttpServer)
 
             is a5 -> ctx.writeAndFlush(am(0))
 
-            is aY -> ctx.writeAndFlush(bs(USER_ID))
+            is aY -> ctx.writeAndFlush(bs(config.userId))
 
             is GetActiveInstancesRequest -> ctx.writeAndFlush(GetInstancesResp(0))
             is GetTotalInstancesRequest -> ctx.writeAndFlush(GetInstancesResp(1))
@@ -110,7 +109,7 @@ class ServerHandler(private val config: Config, private val http: JarHttpServer)
 
                 val options = config.getScript(scriptId).options
                     .map { it.split("=") }
-                    .map { (key, value) -> key to encryptOption(value.toInt(), SCRIPT_SESSION_ID, USER_ID) }
+                    .map { (key, value) -> key to encryptOption(value.toInt(), SCRIPT_SESSION_ID, config.userId) }
                     .joinToString(",") { (key, value) -> "$key=$value" }
 
                 ctx.writeAndFlush(ScriptOptionsResp(options))
