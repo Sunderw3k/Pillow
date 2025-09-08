@@ -72,8 +72,8 @@ class Config(private val configDir: Path) {
                         scriptConfig.author,
                         scriptConfig.threadUrl,
                         scriptConfig.imageUrl,
-                        index,
-                        index,
+                        scriptConfig.storeId,
+                        scriptConfig.scriptId,
                         false
                     )
 

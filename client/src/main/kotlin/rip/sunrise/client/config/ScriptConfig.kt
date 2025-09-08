@@ -7,6 +7,8 @@ data class ScriptConfig(
     val author: String,
     val imageUrl: String,
     val threadUrl: String,
+    val storeId: Int,
+    val scriptId: Int,
 
     val jarFile: String,
     val optionFile: String

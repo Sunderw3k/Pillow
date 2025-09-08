@@ -226,6 +226,8 @@ class ClientHandler(val user: User, val password: String) :
                 author = script.l,
                 imageUrl = script.q,
                 threadUrl = script.v,
+                storeId = script.d,
+                scriptId = script.x,
 
                 jarFile = "jars/$name.jar",
                 optionFile = "options/$name.txt",
