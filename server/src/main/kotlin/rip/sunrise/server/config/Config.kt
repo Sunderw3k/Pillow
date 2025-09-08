@@ -11,7 +11,7 @@ class Config(private val configDir: Path) {
     val gson = Gson()
 
     var revisionData = ""
-    var purchasedScriptIds = emptySet<Int>()
+    var purchasedScripts = mutableListOf<PurchasedScript>()
     var scripts = mutableListOf<Script>()
     var serverUrl = ""
     var userId = -1
@@ -84,9 +84,14 @@ class Config(private val configDir: Path) {
                 }
             }
 
-            this.purchasedScriptIds = runCatching {
-                purchasedScriptsFile.readLines().map { it.split(" ").first().toInt() }
-            }.getOrElse { error("Malformed purchased scripts file: ${it.localizedMessage}") }.toSet()
+            // Format is `storeId;scriptId;name`
+            this.purchasedScripts = purchasedScriptsFile.readLines().map { it.split(";") }.map {
+                PurchasedScript(
+                    name = it[2],
+                    scriptId = it[1].toInt(),
+                    storeId = it[0].toInt()
+                )
+            }.toMutableList()
             this.serverUrl = config.serverUrl
             this.revisionData = revisionFile.readText()
             this.userId = config.userId
@@ -107,7 +112,9 @@ class Config(private val configDir: Path) {
         val userId: Int,
     )
 
-    class Script(val metadata: ScriptWrapper, val scriptJar: File, val options: List<String>)
+    data class PurchasedScript(val name: String, val scriptId: Int, val storeId: Int)
+
+    data class Script(val metadata: ScriptWrapper, val scriptJar: File, val options: List<String>)
 
     companion object {
         val logger: Logger = LoggerFactory.getLogger("Config")

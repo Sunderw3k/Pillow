@@ -21,6 +21,8 @@ import rip.sunrise.server.http.JarHttpServer
 import rip.sunrise.server.utils.extensions.md5sum
 import java.util.Base64
 import rip.sunrise.server.logger
+import rip.sunrise.server.utils.extensions.generateFakeScriptWrappers
+import rip.sunrise.server.utils.extensions.isRealScriptId
 
 const val ACCOUNT_SESSION_ID = "cMU/vYTQnRyD2cFx1i1J6aa+ZpRIINh5qkMxoTh8XoA"
 const val SCRIPT_SESSION_ID = "dbsVbKA4mRLE4NaOMXCCnvPYEJsNsXdwek6hosbCiQ0"
@@ -74,6 +76,13 @@ class ServerHandler(private val config: Config, private val http: JarHttpServer)
             }
 
             is EncryptedScriptRequest -> {
+                // In case you start a fake script, it'll only error in the client.
+                if (!config.isRealScriptId(msg.f)) {
+                    logger.debug("Started fake script with ID ${msg.f}")
+                    ctx.writeAndFlush(EncryptedScriptResp("", null, null, null, 0))
+                    return
+                }
+
                 val endpoint = http.getScriptEndpoint(msg.f)
                 val serverUrl = config.serverUrl.removeSuffix("/")
 
@@ -87,7 +96,7 @@ class ServerHandler(private val config: Config, private val http: JarHttpServer)
             }
 
             is FreeScriptListRequest -> ctx.writeAndFlush(ScriptListResp(emptyList()))
-            is PaidScriptListRequest -> ctx.writeAndFlush(ScriptListResp(config.scripts.map { it.metadata }))
+            is PaidScriptListRequest -> ctx.writeAndFlush(ScriptListResp(config.scripts.map { it.metadata } + config.generateFakeScriptWrappers()))
 
             is ScriptSessionRequest -> ctx.writeAndFlush(ScriptSessionResp(0, SCRIPT_SESSION_ID))
 
@@ -95,7 +104,7 @@ class ServerHandler(private val config: Config, private val http: JarHttpServer)
 
             is AuthenticationCodeRequest -> ctx.writeAndFlush(AuthenticationCodeResp(AUTHENTICATION_CODE))
 
-            is PurchasedScriptIdsRequest -> ctx.writeAndFlush(PurchasedScriptIdsResp(config.purchasedScriptIds))
+            is PurchasedScriptIdsRequest -> ctx.writeAndFlush(PurchasedScriptIdsResp(config.purchasedScripts.map { it.storeId }.toSet()))
 
             is a5 -> ctx.writeAndFlush(am(0))
 
