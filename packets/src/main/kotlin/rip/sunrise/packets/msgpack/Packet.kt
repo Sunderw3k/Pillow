@@ -4,12 +4,34 @@ import org.msgpack.core.MessagePack
 import org.msgpack.core.MessagePacker
 import org.msgpack.core.MessageUnpacker
 
+const val WRAPPED_PACKET_ID: Byte = 127
+
 abstract class Packet<T : Packet<T>> {
     abstract val id: Byte
     var counter: Int = -1
 
-    fun pack(counter: Int): ByteArray {
+    /**
+     * Packs a MsgPack packet. The format is
+     * ```
+     * PacketID - Byte
+     * Counter - Int
+     * Length - BinaryHeader
+     * Payload - Byte Array
+     * ```
+     *
+     * In case [wrap] is true (what the client does since 3.30.36), it sets `packetId` to [WRAPPED_PACKET_ID], and the data is
+     * ```
+     * currentTime - Extension Timestamp
+     * wrappedPacket - MsgPack Packet
+     * ```
+     */
+    fun pack(counter: Int, wrap: Boolean): ByteArray {
         return MessagePack.newDefaultBufferPacker().use { packer ->
+            if (wrap) {
+                packer.packByte(WRAPPED_PACKET_ID)
+                packer.packTimestamp(System.currentTimeMillis())
+            }
+
             packer.packByte(id) // packet id
             packer.packInt(counter) // counter
 

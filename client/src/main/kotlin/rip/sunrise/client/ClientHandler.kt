@@ -256,7 +256,7 @@ class ClientHandler(val user: User, val password: String) :
         pending[responseClass] = promise
 
         if (packet is Packet<*>) {
-            writeAndFlush(packet.pack(packetCount++))
+            writeAndFlush(packet.pack(packetCount++, true))
         } else {
             writeAndFlush(packet)
         }.addListener {

@@ -7,12 +7,14 @@ import io.netty.channel.ChannelId
 import io.netty.channel.SimpleChannelInboundHandler
 import org.dreambot.*
 import org.msgpack.core.MessagePack
+import org.msgpack.core.MessageUnpacker
 import rip.sunrise.packets.clientbound.*
 import rip.sunrise.packets.msgpack.LOGIN_REQUEST_PACKET_ID
 import rip.sunrise.packets.msgpack.LoginResponse
 import rip.sunrise.packets.msgpack.Packet
 import rip.sunrise.packets.msgpack.REVISION_INFO_REQUEST_PACKET_ID
 import rip.sunrise.packets.msgpack.RevisionInfoResponse
+import rip.sunrise.packets.msgpack.WRAPPED_PACKET_ID
 import rip.sunrise.packets.msgpack.unpackLoginRequest
 import rip.sunrise.packets.msgpack.unpackRevisionInfoRequest
 import rip.sunrise.packets.serverbound.*
@@ -49,28 +51,16 @@ class ServerHandler(private val config: Config, private val http: JarHttpServer)
             is ByteArray -> {
                 MessagePack.newDefaultUnpacker(msg).use { unpacker ->
                     val id = unpacker.unpackByte()
-                    logger.info("Received Packet ID: $id")
 
-                    when (id) {
-                        LOGIN_REQUEST_PACKET_ID -> {
-                            val request = unpacker.unpackLoginRequest()
-                            ctx.sendPacket(
-                                LoginResponse(
-                                    request.username,
-                                    ACCOUNT_SESSION_ID,
-                                    SESSION_TOKEN,
-                                    config.userId,
-                                    hashSetOf(10)
-                                )
-                            )
-                        }
+                    if (id == WRAPPED_PACKET_ID) {
+                        val timestamp = unpacker.unpackTimestamp()
+                        val id = unpacker.unpackByte()
 
-                        REVISION_INFO_REQUEST_PACKET_ID -> {
-                            val request = unpacker.unpackRevisionInfoRequest()
+                        logger.info("Got wrapped MsgPack packet! Timestamp: $timestamp ID: $id")
 
-                            val responseChecksum = request.javaagentFlags.hashCode() xor (config.userId * REVISION_INFO_JAVAAGENT_CONSTANT)
-                            ctx.sendPacket(RevisionInfoResponse(config.revisionData, responseChecksum))
-                        }
+                        ctx.handleMsgpackPacket(id, unpacker)
+                    } else {
+                        ctx.handleMsgpackPacket(id, unpacker)
                     }
                 }
             }
@@ -128,6 +118,32 @@ class ServerHandler(private val config: Config, private val http: JarHttpServer)
         }
     }
 
+    fun ChannelHandlerContext.handleMsgpackPacket(id: Byte, unpacker: MessageUnpacker) {
+        logger.info("Received MsgPack Packet ID: $id")
+
+        when (id) {
+            LOGIN_REQUEST_PACKET_ID -> {
+                val request = unpacker.unpackLoginRequest()
+                sendPacket(
+                    LoginResponse(
+                        request.username,
+                        ACCOUNT_SESSION_ID,
+                        SESSION_TOKEN,
+                        config.userId,
+                        hashSetOf(10)
+                    )
+                )
+            }
+
+            REVISION_INFO_REQUEST_PACKET_ID -> {
+                val request = unpacker.unpackRevisionInfoRequest()
+
+                val responseChecksum = request.javaagentFlags.hashCode() xor (config.userId * REVISION_INFO_JAVAAGENT_CONSTANT)
+                sendPacket(RevisionInfoResponse(config.revisionData, responseChecksum))
+            }
+        }
+    }
+
     // TODO: Still used?
     fun handleJson(ctx: ChannelHandlerContext, msg: String) {
         println("Got JSON Message!")
@@ -154,7 +170,7 @@ class ServerHandler(private val config: Config, private val http: JarHttpServer)
     }
 
     private fun ChannelHandlerContext.sendPacket(packet: Packet<*>) {
-        writeAndFlush(packet.pack(sessions[channel().id()]!!.packetCount++))
+        writeAndFlush(packet.pack(sessions[channel().id()]!!.packetCount++, false))
     }
 
     private fun encryptOption(value: Int, scriptSessionId: String, userId: Int): Int {
