@@ -79,11 +79,13 @@ object DBClientData {
                     run version@{
                         if (node.superName == "javax/swing/JFrame") {
                             val init = node.methods.first { it.name == "<init>" }
-                            val format = init.instructions
-                                .filterIsInstance<MethodInsnNode>()
-                                .firstOrNull { it.name == "format" } ?: return@version
 
-                            version = runCatching { invokeStringDecryption(format.previous.previous) }.getOrNull() ?: return@version
+                            version = init.instructions
+                                .filterIsInstance<MethodInsnNode>()
+                                .filter { it.name == "format" }
+                                .map { runCatching { invokeStringDecryption(it.previous.previous) } }
+                                .mapNotNull { it.getOrNull() }
+                                .firstOrNull { it.matches("^3\\.\\d+\\.\\d+(?:\\.\\d+)?$".toRegex()) } ?: return@version
                         }
                     }
 
