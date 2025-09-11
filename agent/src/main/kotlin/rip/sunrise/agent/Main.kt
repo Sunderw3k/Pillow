@@ -103,7 +103,7 @@ fun premain(args: String?, inst: Instrumentation) {
             //  Get the caller in a better way: 0 is lambda, 1 is hooked method,
             //  2 is caller (invoke handler), 3 is Method.invoke, 4 is actual caller
             val caller = Throwable().stackTrace[4].className
-            if (instance.host == HTTP_HOST && (caller.startsWith("org.dreambot.6v") || caller.startsWith("org.dreambot.3sg"))) {
+            if (instance.host == HTTP_HOST && (caller.startsWith("org.dreambot.5QR") || caller.startsWith("org.dreambot.67"))) {
                 log("Spoofing script host!")
                 ctx.setReturnValue("cloudflarestorage.com")
             }
