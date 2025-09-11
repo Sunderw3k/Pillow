@@ -3,6 +3,6 @@ package rip.sunrise.packets.serverbound
 import java.io.Serializable
 
 /**
- * c -> account session token
+ * a -> account session token
  */
-data class PaidScriptListRequest(val c: String) : Serializable
+data class PaidScriptListRequest(val a: String) : Serializable
