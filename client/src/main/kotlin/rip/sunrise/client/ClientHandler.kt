@@ -30,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import kotlin.io.path.Path
+import kotlin.random.Random
+import kotlin.random.nextLong
 
 const val REVISION_INFO_JAVAAGENT_CONSTANT = -1640531527
 
@@ -69,6 +71,8 @@ class ClientHandler(val user: User, val password: String) :
 
             val accountSession = loginResponse.accountSessionToken
 
+            Thread.sleep(Random.nextLong(1000, 2000))
+
             val revisionResponse = ctx.sendPacketAndWait(
                 RevisionInfoRequest(accountSession, DREAMBOT_SHA256, ""),
                 RevisionInfoResponse::class.java
@@ -79,6 +83,8 @@ class ClientHandler(val user: User, val password: String) :
             writeRevisionData(revisionResponse.revisionData)
             println("Dumped revision info")
 
+            Thread.sleep(Random.nextLong(5_000..15_000L))
+
             val scripts = ctx.sendPacketAndWait(
                 FreeScriptListRequest(accountSession),
                 ScriptListResp::class.java
@@ -86,6 +92,8 @@ class ClientHandler(val user: User, val password: String) :
                 PaidScriptListRequest(accountSession),
                 ScriptListResp::class.java
             ).v
+
+            Thread.sleep(Random.nextLong(5_000..10_000L))
 
             if (scripts.isEmpty()) {
                 ctx.disconnect()
@@ -114,6 +122,8 @@ class ClientHandler(val user: User, val password: String) :
                 val options = getScriptOptions(scriptOptions, scriptSession, loginResponse.userId)
 
                 writeScriptData(script, bytes, options)
+
+                Thread.sleep(Random.nextLong(5_000..10_000L))
             }
 
             ctx.disconnect()
