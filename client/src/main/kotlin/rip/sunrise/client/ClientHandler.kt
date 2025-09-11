@@ -62,7 +62,9 @@ class ClientHandler(val user: User, val password: String) :
                 error("Something went wrong logging in! Try changing the HARDWARE_ID, IP, or account. $loginResponse")
             }
 
-            user.sessionId = loginResponse.sessionId
+            if (loginResponse.sessionId.isNotEmpty()) {
+                user.sessionId = loginResponse.sessionId
+            }
             UserStorage.addUser(user)
 
             val accountSession = loginResponse.accountSessionToken
