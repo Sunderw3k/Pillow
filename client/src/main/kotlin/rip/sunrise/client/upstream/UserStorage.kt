@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
 import java.security.SecureRandom
+import java.util.UUID
 
 /**
  * Stores DreamBot account data. Mostly for `sessionId`.
@@ -34,6 +35,4 @@ object UserStorage {
 data class User(val name: String, val hardwareId: String, var sessionId: String)
 
 @OptIn(ExperimentalStdlibApi::class)
-fun generateHardwareId(): String = ByteArray(16).also {
-    SecureRandom.getInstanceStrong().nextBytes(it)
-}.toHexString()
+fun generateHardwareId(): String = UUID.randomUUID().toString() + SecureRandom.getInstanceStrong().nextInt()
