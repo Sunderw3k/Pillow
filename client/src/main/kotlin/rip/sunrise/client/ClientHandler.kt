@@ -49,7 +49,7 @@ class ClientHandler(val user: User, val password: String) :
                     user.name,
                     password,
                     user.sessionId,
-                    DBClientData.sharedSecret,
+                    DREAMBOT_SHARED_SECRET,
                     user.hardwareId
                 ),
                 LoginResponse::class.java
@@ -68,7 +68,7 @@ class ClientHandler(val user: User, val password: String) :
             val accountSession = loginResponse.accountSessionToken
 
             val revisionResponse = ctx.sendPacketAndWait(
-                RevisionInfoRequest(accountSession, DBClientData.hash, ""),
+                RevisionInfoRequest(accountSession, DREAMBOT_SHA256, ""),
                 RevisionInfoResponse::class.java
             )
             if (revisionResponse.javaagentChecksum xor (loginResponse.userId * REVISION_INFO_JAVAAGENT_CONSTANT) != 0) {
@@ -188,7 +188,7 @@ class ClientHandler(val user: User, val password: String) :
         when (code) {
             // Sent when requesting revision info.
             "a" -> {
-                obj.addProperty("r", DBClientData.hash)
+                obj.addProperty("r", DREAMBOT_SHA256)
                 obj.addProperty("c", user.hardwareId)
                 obj.addProperty("e", "")
             }
