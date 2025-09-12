@@ -94,7 +94,9 @@ class ServerHandler(private val config: Config, private val http: JarHttpServer)
 
             is AuthenticationCodeRequest -> ctx.writeAndFlush(AuthenticationCodeResp(AUTHENTICATION_CODE))
 
-            is PurchasedScriptIdsRequest -> ctx.writeAndFlush(PurchasedScriptIdsResp(config.purchasedScripts.map { it.storeId }.toSet()))
+            is PurchasedScriptIdsRequest -> ctx.writeAndFlush(PurchasedScriptIdsResp(TreeSet<Int>().apply {
+                addAll(config.purchasedScripts.map { it.storeId })
+            }))
 
             is a5 -> ctx.writeAndFlush(am(0))
 
