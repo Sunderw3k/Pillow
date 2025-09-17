@@ -25,6 +25,7 @@ import java.util.Base64
 import rip.sunrise.server.logger
 import rip.sunrise.server.utils.extensions.generateFakeScriptWrappers
 import rip.sunrise.server.utils.extensions.isRealScriptId
+import java.util.TreeSet
 
 const val ACCOUNT_SESSION_ID = "cMU/vYTQnRyD2cFx1i1J6aa+ZpRIINh5qkMxoTh8XoA"
 const val SCRIPT_SESSION_ID = "dbsVbKA4mRLE4NaOMXCCnvPYEJsNsXdwek6hosbCiQ0"
