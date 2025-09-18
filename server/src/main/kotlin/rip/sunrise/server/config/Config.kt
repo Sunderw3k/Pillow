@@ -11,8 +11,11 @@ class Config(private val configDir: Path) {
     val gson = Gson()
 
     var revisionData = ""
+    var isVipRevision = false
+
     var purchasedScripts = mutableListOf<PurchasedScript>()
     var scripts = mutableListOf<Script>()
+
     var serverUrl = ""
     var userId = -1
 
@@ -41,10 +44,10 @@ class Config(private val configDir: Path) {
             }
 
             scripts.clear()
-            scriptConfigDirectory.listFiles()!!.forEachIndexed { index, file ->
+            scriptConfigDirectory.listFiles()!!.forEach { file ->
                 if (file.extension != "json") {
                     logger.warn("Skipping non-JSON file {}", file.name)
-                    return@forEachIndexed
+                    return@forEach
                 }
 
                 runCatching {
@@ -94,7 +97,13 @@ class Config(private val configDir: Path) {
             }.toMutableList()
             this.serverUrl = config.serverUrl
             this.revisionData = revisionFile.readText()
+            this.isVipRevision = revisionData.contains("Region.lowDetail")
             this.userId = config.userId
+
+            logger.debug("Server URL is $serverUrl")
+            logger.debug("UserID is $userId")
+            logger.debug("There are ${scripts.size} owned scripts. Total ${purchasedScripts.size} known scripts.")
+            logger.debug("Revision is VIP: $isVipRevision")
         }.onFailure {
             logger.error("Failed to load config", it)
         }

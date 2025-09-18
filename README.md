@@ -54,12 +54,9 @@ java -jar /path/to/pillow/client.jar
 
 Since `DreamBot 3.30.33`, non-VIP accounts no longer get necessary info for VIP only hooks.
 That means you need a VIP revision to use VIP features, like menu manipulation, no click walk, or the render injections.
-Spoofing the member roles to `SPONSOR` while on a non-VIP revision will break the client.
 The latest VIP revision, as everything bleeding edge, is on the [discord](https://discord.gg/xEQtnX9CeM).
 
-If you don't want to join, or don't care about VIP features, you need to change the login response to respond with `3` (MEMBER) instead of `10` (SPONSOR).
-
-NOTE: Numbers as of `3.30.36`, might or might not work.
+The server auto-detects whether to spoof the `MEMBER` (non-VIP) or `SPONSOR` (VIP) role based on the file.
 
 ### Purchased Scripts
 As a bit of a security measure, the script IDs are whitelisted, that means you need to know the store id of your scripts and their dependencies.
@@ -131,4 +128,5 @@ Then you can connect to your own server with:
 java -javaagent:/path/to/pillow/agent.jar -jar /path/to/original/client.jar
 ```
 
-If everything works, you should be connected and get the `SPONSOR` role. There are logs on the server, so take a look at that in case issues emerge.
+If everything works, you should be connected and get the `SPONSOR` (or `MEMBER` if you don't have the VIP revision) role.
+There are logs on the server, so take a look at that in case issues emerge.

@@ -127,13 +127,15 @@ class ServerHandler(private val config: Config, private val http: JarHttpServer)
         when (id) {
             LOGIN_REQUEST_PACKET_ID -> {
                 val request = unpacker.unpackLoginRequest()
+
+                val role = if (config.isVipRevision) 10 else 3
                 sendPacket(
                     LoginResponse(
                         request.username,
                         ACCOUNT_SESSION_ID,
                         SESSION_TOKEN,
                         config.userId,
-                        hashSetOf(10)
+                        hashSetOf(role)
                     )
                 )
             }
